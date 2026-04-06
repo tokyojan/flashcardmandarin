@@ -15,7 +15,7 @@ Full-stack spaced repetition flashcard app for learning Mandarin Chinese.
 
 2. Start all services with Docker Compose:
    ```bash
-   docker-compose up
+   docker compose up
    ```
 
 3. Access the app:
