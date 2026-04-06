@@ -1,0 +1,23 @@
+{
+  "name": "flashcard-mandarin-backend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch server/index.ts",
+    "db:migrate": "npx auth@latest migrate"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.12",
+    "better-auth": "^1.5.6",
+    "dotenv": "^17.4.0",
+    "hono": "^4.12.10",
+    "pg": "^8.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.0",
+    "@types/pg": "^8.15.4",
+    "tsx": "^4.21.0",
+    "typescript": "~5.9.3"
+  }
+}

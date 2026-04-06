@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: flashcard
+      POSTGRES_PASSWORD: flashcard
+      POSTGRES_DB: flashcard
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flashcard"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+  server:
+    build: ./backend
+    command: sh -c "echo y | npx auth@latest migrate 2>/dev/null; npx tsx watch server/index.ts"
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://flashcard:flashcard@postgres:5432/flashcard
+      BETTER_AUTH_SECRET: dev-secret-please-change-in-production
+      BETTER_AUTH_URL: http://localhost:3000
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  client:
+    build: ./frontend
+    command: npx vite --host
+    ports:
+      - "5173:5173"
+    environment:
+      API_URL: http://server:3000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - server
+
+volumes:
+  pgdata:

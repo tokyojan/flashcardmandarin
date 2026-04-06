@@ -1,0 +1,102 @@
+:root {
+  --bg: #ffffff;
+  --bg-raised: #f8fafc;
+  --text: #64748b;
+  --text-strong: #0f172a;
+  --border: #e2e8f0;
+  --card-bg: #ffffff;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.06);
+  --accent: #7c3aed;
+  --accent-bg: rgba(124, 58, 237, 0.07);
+  --accent-border: rgba(124, 58, 237, 0.25);
+  --overlay: rgba(15, 23, 42, 0.45);
+  --modal-bg: #ffffff;
+  --input-bg: #f8fafc;
+  --success: #16a34a;
+  --warning: #ea580c;
+  --danger: #dc2626;
+  --info: #2563eb;
+
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-chinese: "Noto Sans SC", "PingFang SC", "Hiragino Sans GB", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Consolas, monospace;
+  --radius: 10px;
+  --radius-sm: 6px;
+
+  color-scheme: light dark;
+}
+
+/* Dark mode (system) */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c0e14;
+    --bg-raised: #151821;
+    --text: #8b95a8;
+    --text-strong: #e2e8f0;
+    --border: #1e2433;
+    --card-bg: #151821;
+    --card-shadow: 0 1px 3px rgba(0,0,0,0.2), 0 8px 32px rgba(0,0,0,0.25);
+    --accent: #a78bfa;
+    --accent-bg: rgba(167, 139, 250, 0.1);
+    --accent-border: rgba(167, 139, 250, 0.25);
+    --overlay: rgba(0, 0, 0, 0.6);
+    --modal-bg: #151821;
+    --input-bg: #1a1f2e;
+  }
+}
+
+/* Dark mode (manual) */
+:root[data-theme="dark"] {
+  --bg: #0c0e14;
+  --bg-raised: #151821;
+  --text: #8b95a8;
+  --text-strong: #e2e8f0;
+  --border: #1e2433;
+  --card-bg: #151821;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.2), 0 8px 32px rgba(0,0,0,0.25);
+  --accent: #a78bfa;
+  --accent-bg: rgba(167, 139, 250, 0.1);
+  --accent-border: rgba(167, 139, 250, 0.25);
+  --overlay: rgba(0, 0, 0, 0.6);
+  --modal-bg: #151821;
+  --input-bg: #1a1f2e;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font: 15px/1.5 var(--font-sans);
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+h1, h2, h3 { font-weight: 600; color: var(--text-strong); margin: 0 0 8px; }
+h2 { font-size: 20px; }
+h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text); }
+
+code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 2px 6px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+kbd {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 1px 5px;
+  border: 1px solid;
+  border-radius: 3px;
+  opacity: 0.5;
+  line-height: 1.4;
+}

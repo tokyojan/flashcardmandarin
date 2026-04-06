@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: flashcard
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: flashcard
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flashcard"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  server:
+    image: flashcard-mandarin-server:latest
+    environment:
+      DATABASE_URL: postgresql://flashcard:${POSTGRES_PASSWORD}@postgres:5432/flashcard
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${PUBLIC_URL:-http://localhost:3888}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  client:
+    image: flashcard-mandarin-client:latest
+    ports:
+      - "3888:3888"
+    environment:
+      API_URL: http://server:3000
+    depends_on:
+      - server
+    restart: unless-stopped
+
+volumes:
+  pgdata:

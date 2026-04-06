@@ -1,4 +1,26 @@
-mandarin.json
-/deck_backups
-/.venv
-deck_mandarin.json
+node_modules
+dist
+*.local
+*.log
+
+# Data
+frontend/public/mandarin.json
+sqlite.db
+
+# Environment
+.env
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Playwright
+.playwright-mcp
+*.tar
