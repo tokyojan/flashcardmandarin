@@ -2,6 +2,7 @@ node_modules
 dist
 *.local
 *.log
+deck_backups
 
 # Data
 frontend/public/mandarin.json
