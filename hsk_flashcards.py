@@ -208,7 +208,7 @@ def load_mnemonics_index() -> Tuple[Dict[Tuple[str, str], Tuple[str, str]], Dict
     try:
         with open(MNEMONICS_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
-       for r in data:
+        for r in data:
             w = (r.get("word") or "").strip()
             if not w:
                 continue
@@ -286,7 +286,7 @@ def format_debug_report(
     lines.append(f"  Not useful_for_flashcard: {excl_useful}")
     lines.append(f"  POS excluded:              {excl_pos}")
     lines.append(f"  CEFR not exact match:      {excl_cefr}")
-   lines.append(f"  Missing core fields:       {excl_missing}")
+    lines.append(f"  Missing core fields:       {excl_missing}")
     lines.append("")
     lines.append("After filtering (kept):")
     kept_total = sum(after_counts.values()) + after_unknown
