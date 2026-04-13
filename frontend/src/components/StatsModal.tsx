@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { Fragment, useEffect } from "react";
 import type { Card, StudyStats } from "../types";
 import { getCardStatus } from "../sm2";
 import { getStreak, getRetention, getReviewHistory } from "../storage";
@@ -115,6 +115,13 @@ export function StatsModal({ cards, stats, onClose, onExport, onImportClick }: P
           </div>
         </div>
 
+        {stats.toneConfusions && Object.keys(stats.toneConfusions).length > 0 && (
+          <div className="stats-section">
+            <h3>Tone Confusions</h3>
+            <ToneMatrix confusions={stats.toneConfusions} />
+          </div>
+        )}
+
         <div className="stats-section">
           <h3>Card Maturity</h3>
           <div className="maturity-rows">
@@ -147,6 +154,51 @@ export function StatsModal({ cards, stats, onClose, onExport, onImportClick }: P
             Import Backup
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ToneMatrix({ confusions }: { confusions: Record<string, number> }) {
+  const tones = [1, 2, 3, 4, 5];
+  const max = Math.max(1, ...Object.values(confusions));
+  const total = Object.values(confusions).reduce((a, b) => a + b, 0);
+
+  return (
+    <div className="tone-matrix-wrap">
+      <div className="tone-matrix">
+        <div className="tone-matrix-corner">{"expected \u00b7 heard"}</div>
+        {tones.map((t) => (
+          <div key={`h-${t}`} className="tone-matrix-head">{t === 5 ? "\u00b0" : t}</div>
+        ))}
+        {tones.map((row) => (
+          <Fragment key={`row-${row}`}>
+            <div className="tone-matrix-head">{row === 5 ? "\u00b0" : row}</div>
+            {tones.map((col) => {
+              const count = row === col ? 0 : (confusions[`${row}->${col}`] ?? 0);
+              const intensity = count / max;
+              return (
+                <div
+                  key={`${row}-${col}`}
+                  className="tone-matrix-cell"
+                  data-self={row === col || undefined}
+                  style={{
+                    background: row === col
+                      ? "transparent"
+                      : `color-mix(in srgb, var(--danger) ${Math.round(intensity * 70)}%, transparent)`,
+                  }}
+                  title={`Expected ${row}, heard ${col}: ${count}`}
+                >
+                  {count || ""}
+                </div>
+              );
+            })}
+          </Fragment>
+        ))}
+      </div>
+      <div className="tone-matrix-legend">
+        <span>{total} tone slip{total !== 1 ? "s" : ""} recorded</span>
+        <span className="tone-matrix-key">{"\u00b0"} = neutral</span>
       </div>
     </div>
   );

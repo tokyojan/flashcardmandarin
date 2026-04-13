@@ -8,6 +8,7 @@ const DEFAULT_SETTINGS: Settings = {
   mnemonicLangs: { english: true, italian: true },
   designTheme: "classic",
   layoutVariant: "classic",
+  productionMode: false,
 };
 
 // --- API helpers ---
@@ -50,10 +51,18 @@ export async function deleteUserData(key: string): Promise<void> {
 
 // --- Pure functions (operate on already-loaded data) ---
 
+export interface ReviewExtras {
+  charactersCorrect?: boolean;
+  tonesCorrect?: boolean;
+  /** Tone confusion entries recorded this review, e.g. ["3->1", "2->1"]. */
+  toneConfusions?: string[];
+}
+
 export function recordReview(
   stats: StudyStats,
   correct: boolean,
-  isNewCard: boolean
+  isNewCard: boolean,
+  extras: ReviewExtras = {}
 ): StudyStats {
   const today = new Date().toISOString().slice(0, 10);
   const prev: DayStats = stats.history[today] ?? {
@@ -61,11 +70,26 @@ export function recordReview(
     correct: 0,
     newLearned: 0,
   };
-  const day = { ...prev };
+  const day: DayStats = { ...prev };
   day.reviews++;
   if (correct) day.correct++;
   if (isNewCard) day.newLearned++;
-  return { history: { ...stats.history, [today]: day } };
+  if (extras.charactersCorrect !== undefined) {
+    day.charactersCorrect = (day.charactersCorrect ?? 0) + (extras.charactersCorrect ? 1 : 0);
+  }
+  if (extras.tonesCorrect !== undefined) {
+    day.tonesCorrect = (day.tonesCorrect ?? 0) + (extras.tonesCorrect ? 1 : 0);
+  }
+
+  const toneConfusions = { ...(stats.toneConfusions ?? {}) };
+  for (const key of extras.toneConfusions ?? []) {
+    toneConfusions[key] = (toneConfusions[key] ?? 0) + 1;
+  }
+
+  return {
+    history: { ...stats.history, [today]: day },
+    toneConfusions,
+  };
 }
 
 export function getStreak(stats: StudyStats): number {

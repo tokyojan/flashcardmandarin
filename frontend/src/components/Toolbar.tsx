@@ -10,6 +10,8 @@ interface Props {
   setReversed: (v: boolean) => void;
   mnemonicLangs: Record<MnemonicLang, boolean>;
   setMnemonicLangs: (updater: (prev: Record<MnemonicLang, boolean>) => Record<MnemonicLang, boolean>) => void;
+  productionMode: boolean;
+  setProductionMode: (v: boolean) => void;
   darkMode: Settings["darkMode"];
   cycleDarkMode: () => void;
   onShowHelp: () => void;
@@ -40,6 +42,10 @@ export function Toolbar(p: Props) {
         <label className="toolbar-check">
           <input type="checkbox" checked={p.reversed} onChange={() => p.setReversed(!p.reversed)} />
           <span>Hanzi first</span>
+        </label>
+        <label className="toolbar-check" title="4-choice cloze quiz with sentence context">
+          <input type="checkbox" checked={p.productionMode} onChange={() => p.setProductionMode(!p.productionMode)} />
+          <span>Quiz mode</span>
         </label>
         {SUPPORTED_LANGUAGES.map(({ key, label }) => (
           <label key={key} className="toolbar-check">

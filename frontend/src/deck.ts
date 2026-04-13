@@ -51,6 +51,10 @@ export function buildDeckFromRaw(
     const it = (row.italian ?? "").trim();
     if (en) card.mnemonicEnglish = en;
     if (it) card.mnemonicItalian = it;
+    const sNative = (row.example_sentence_native ?? "").trim();
+    const sEng = (row.example_sentence_english ?? "").trim();
+    if (sNative) card.sentenceNative = sNative;
+    if (sEng) card.sentenceEnglish = sEng;
     cards.push(card);
   }
 

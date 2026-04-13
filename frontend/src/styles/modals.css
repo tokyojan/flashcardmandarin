@@ -228,6 +228,84 @@
   border-top: 1px solid var(--border);
 }
 
+/* Tone confusion matrix */
+
+.tone-matrix-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tone-matrix {
+  display: grid;
+  grid-template-columns: 80px repeat(5, 1fr);
+  gap: 2px;
+  padding: 4px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.tone-matrix-corner {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text);
+  padding: 6px 4px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+}
+
+.tone-matrix-head {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-strong);
+  text-align: center;
+  padding: 6px;
+  background: var(--card-bg);
+  border-radius: 3px;
+}
+
+.tone-matrix-cell {
+  text-align: center;
+  padding: 8px 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-strong);
+  background: var(--card-bg);
+  border-radius: 3px;
+  min-height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tone-matrix-cell[data-self] {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--bg-raised),
+    var(--bg-raised) 4px,
+    var(--card-bg) 4px,
+    var(--card-bg) 8px
+  );
+  color: var(--text);
+  opacity: 0.4;
+}
+
+.tone-matrix-legend {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text);
+  opacity: 0.7;
+}
+.tone-matrix-key { font-family: var(--font-mono); }
+
 /* ---- Browse modal ---- */
 
 .browse-search {

@@ -15,6 +15,9 @@ import { BrowseModal } from "./components/BrowseModal";
 import { HelpOverlay } from "./components/HelpOverlay";
 import { Toolbar } from "./components/Toolbar";
 import { DesignSwitcher } from "./components/DesignSwitcher";
+import { SentenceReview } from "./components/SentenceReview";
+import type { PinyinEval } from "./lib/pinyin";
+import { toneConfusionKey } from "./lib/pinyin";
 import { CardView } from "./components/CardView";
 import { ReviewControls } from "./components/ReviewControls";
 import { DoneScreen } from "./components/DoneScreen";
@@ -52,6 +55,7 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
   const [darkMode, setDarkMode] = useState<Settings["darkMode"]>("system");
   const [designTheme, setDesignTheme] = useState<DesignTheme>("classic");
   const [layoutVariant, setLayoutVariant] = useState<LayoutVariant>("classic");
+  const [productionMode, setProductionMode] = useState(false);
   const [undoStack, setUndoStack] = useState<Card[]>([]);
   const [flash, setFlash] = useState("");
   const [grades, setGrades] = useState<SessionGrades>({ again: 0, hard: 0, good: 0, easy: 0 });
@@ -112,8 +116,8 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
   // Persist settings on change
   useEffect(() => {
     if (phase === "loading") return;
-    saveUserData("settings", { cefrSel, dailyNew, reversed, darkMode, mnemonicLangs, designTheme, layoutVariant });
-  }, [cefrSel, dailyNew, reversed, darkMode, mnemonicLangs, designTheme, layoutVariant, phase]);
+    saveUserData("settings", { cefrSel, dailyNew, reversed, darkMode, mnemonicLangs, designTheme, layoutVariant, productionMode });
+  }, [cefrSel, dailyNew, reversed, darkMode, mnemonicLangs, designTheme, layoutVariant, productionMode, phase]);
 
   // Flush pending deck save on unmount
   useEffect(() => {
@@ -147,6 +151,7 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
         if (s.designTheme) setDesignTheme(s.designTheme);
         if (s.layoutVariant) setLayoutVariant(s.layoutVariant);
         if (s.mnemonicLangs) setMnemonicLangs(s.mnemonicLangs);
+        if (typeof s.productionMode === "boolean") setProductionMode(s.productionMode);
         setStats(userData.stats);
 
         const deckCefr = s.cefrSel;
@@ -233,9 +238,9 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
     }
   }, [phase, currentCard, revealed, sessionIdx, session.length, anyModalOpen]);
 
-  const grade = useCallback(
-    (q: Grade) => {
-      if (!revealed || !currentCard || anyModalOpen) return;
+  const applyGrade = useCallback(
+    (q: Grade, evalResult: PinyinEval | null) => {
+      if (!currentCard || anyModalOpen) return;
 
       setUndoStack((prev) => [...prev.slice(-19), { ...currentCard }]);
 
@@ -262,7 +267,19 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
       setReviews(newReviews);
       setGrades(newGrades);
 
-      const newStats = recordReview(stats, q >= 3, currentCard.isNew);
+      const toneConfusions: string[] = [];
+      if (evalResult) {
+        for (const s of evalResult.syllables) {
+          if (s.baseCorrect && !s.toneCorrect && s.expected.tone && s.got.tone) {
+            toneConfusions.push(toneConfusionKey(s.expected.tone, s.got.tone));
+          }
+        }
+      }
+      const newStats = recordReview(stats, q >= 3, currentCard.isNew, evalResult ? {
+        charactersCorrect: evalResult.charactersCorrect,
+        tonesCorrect: evalResult.tonesCorrect,
+        toneConfusions,
+      } : undefined);
       setStats(newStats);
       saveUserData("stats", newStats);
 
@@ -283,7 +300,15 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
         setRevealed(false);
       }
     },
-    [revealed, currentCard, cards, session, sessionIdx, reviews, grades, stats, cefrSel, debouncedSaveDeck, anyModalOpen]
+    [currentCard, cards, session, sessionIdx, reviews, grades, stats, cefrSel, debouncedSaveDeck, anyModalOpen]
+  );
+
+  const grade = useCallback(
+    (q: Grade) => {
+      if (!revealed) return;
+      applyGrade(q, null);
+    },
+    [revealed, applyGrade]
   );
 
   const undo = useCallback(() => {
@@ -313,7 +338,7 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
   const handleExport = useCallback(() => {
     const data = JSON.stringify({
       deck: cards, stats,
-      settings: { cefrSel, dailyNew, reversed, darkMode, mnemonicLangs, designTheme, layoutVariant },
+      settings: { cefrSel, dailyNew, reversed, darkMode, mnemonicLangs, designTheme, layoutVariant, productionMode },
       exportDate: new Date().toISOString(),
     }, null, 2);
     const blob = new Blob([data], { type: "application/json" });
@@ -324,7 +349,7 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
     a.click();
     URL.revokeObjectURL(url);
     showFlash("Backup exported");
-  }, [cards, stats, cefrSel, dailyNew, reversed, darkMode, mnemonicLangs, designTheme, layoutVariant, showFlash]);
+  }, [cards, stats, cefrSel, dailyNew, reversed, darkMode, mnemonicLangs, designTheme, layoutVariant, productionMode, showFlash]);
 
   const handleImportFile = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -354,6 +379,7 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
             if (data.settings.mnemonicLangs) setMnemonicLangs(data.settings.mnemonicLangs);
             if (data.settings.designTheme) setDesignTheme(data.settings.designTheme);
             if (data.settings.layoutVariant) setLayoutVariant(data.settings.layoutVariant);
+            if (typeof data.settings.productionMode === "boolean") setProductionMode(data.settings.productionMode);
           }
           showFlash("Backup imported successfully");
           setShowStats(false);
@@ -377,28 +403,28 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
 
   // --- Keyboard ---
 
-  const keyHandlers = useMemo(
-    () => ({
+  const keyHandlers = useMemo<Record<string, () => void>>(() => {
+    const common: Record<string, () => void> = {
+      c: copyHanzi, C: copyHanzi,
+      z: undo, Z: undo,
+      p: speakCurrent, P: speakCurrent,
+      s: () => { if (!anyModalOpen) setShowStats(true); },
+      S: () => { if (!anyModalOpen) setShowStats(true); },
+      b: () => { if (!anyModalOpen) setShowBrowse(true); },
+      B: () => { if (!anyModalOpen) setShowBrowse(true); },
+      "?": () => setShowHelp((v) => !v),
+    };
+    if (productionMode) return common;
+    return {
+      ...common,
       " ": revealOrAdvance,
       Enter: revealOrAdvance,
       "1": () => grade(0),
       "2": () => grade(3),
       "3": () => grade(4),
       "4": () => grade(5),
-      c: copyHanzi,
-      C: copyHanzi,
-      z: undo,
-      Z: undo,
-      p: speakCurrent,
-      P: speakCurrent,
-      s: () => { if (!anyModalOpen) setShowStats(true); },
-      S: () => { if (!anyModalOpen) setShowStats(true); },
-      b: () => { if (!anyModalOpen) setShowBrowse(true); },
-      B: () => { if (!anyModalOpen) setShowBrowse(true); },
-      "?": () => setShowHelp((v) => !v),
-    }),
-    [revealOrAdvance, grade, copyHanzi, undo, speakCurrent, anyModalOpen]
-  );
+    };
+  }, [productionMode, revealOrAdvance, grade, copyHanzi, undo, speakCurrent, anyModalOpen]);
   useKeyboard(keyHandlers);
 
   // --- Render ---
@@ -422,6 +448,7 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
         dailyNew={dailyNew} setDailyNew={setDailyNew}
         reversed={reversed} setReversed={setReversed}
         mnemonicLangs={mnemonicLangs} setMnemonicLangs={setMnemonicLangs}
+        productionMode={productionMode} setProductionMode={setProductionMode}
         darkMode={darkMode} cycleDarkMode={cycleDarkMode}
         onShowHelp={() => setShowHelp(true)}
         onShowStats={() => setShowStats(true)}
@@ -463,26 +490,42 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
             <p>Backend returned no data. Check <code>/api/raw-deck</code>.</p>
           </div>
         ) : currentCard ? (
-          <>
-            <CardView
+          productionMode ? (
+            <SentenceReview
+              key={currentCard.id}
               card={currentCard}
-              reversed={reversed}
-              revealed={revealed}
-              mnemonicLangs={mnemonicLangs}
-            />
-            <ReviewControls
-              card={currentCard}
-              revealed={revealed}
+              pool={cards}
               sessionIdx={sessionIdx}
               sessionLength={session.length}
               reviews={reviews}
+              mnemonicLangs={mnemonicLangs}
               canUndo={undoStack.length > 0}
-              onReveal={revealOrAdvance}
-              onGrade={grade}
-              onCopyHanzi={copyHanzi}
+              onSubmit={(g) => applyGrade(g, null)}
               onUndo={undo}
+              onCopyHanzi={copyHanzi}
             />
-          </>
+          ) : (
+            <>
+              <CardView
+                card={currentCard}
+                reversed={reversed}
+                revealed={revealed}
+                mnemonicLangs={mnemonicLangs}
+              />
+              <ReviewControls
+                card={currentCard}
+                revealed={revealed}
+                sessionIdx={sessionIdx}
+                sessionLength={session.length}
+                reviews={reviews}
+                canUndo={undoStack.length > 0}
+                onReveal={revealOrAdvance}
+                onGrade={grade}
+                onCopyHanzi={copyHanzi}
+                onUndo={undo}
+              />
+            </>
+          )
         ) : null}
       </main>
 

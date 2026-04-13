@@ -8,6 +8,8 @@ export interface RawEntry {
   useful_for_flashcard: boolean;
   english?: string;
   italian?: string;
+  example_sentence_native?: string;
+  example_sentence_english?: string;
 }
 
 export type MnemonicLang = "english" | "italian";
@@ -33,6 +35,8 @@ export interface Card {
   isNew: boolean;
   mnemonicEnglish?: string;
   mnemonicItalian?: string;
+  sentenceNative?: string;
+  sentenceEnglish?: string;
 }
 
 export type Grade = 0 | 3 | 4 | 5;
@@ -45,10 +49,13 @@ export interface DayStats {
   reviews: number;
   correct: number;
   newLearned: number;
+  charactersCorrect?: number;
+  tonesCorrect?: number;
 }
 
 export interface StudyStats {
   history: Record<string, DayStats>;
+  toneConfusions?: Record<string, number>;
 }
 
 export type DesignTheme =
@@ -109,6 +116,7 @@ export interface Settings {
   mnemonicLangs: Record<MnemonicLang, boolean>;
   designTheme: DesignTheme;
   layoutVariant: LayoutVariant;
+  productionMode: boolean;
 }
 
 export interface SessionGrades {
