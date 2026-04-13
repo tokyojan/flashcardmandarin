@@ -254,6 +254,29 @@
   font-weight: 500;
 }
 
+.mnemonics {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+  max-width: 640px;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--muted, #888);
+  text-align: center;
+}
+
+.mnemonic-lang {
+  display: inline-block;
+  font-style: normal;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+  margin-right: 6px;
+}
+
 .btn-speak {
   display: flex;
   align-items: center;

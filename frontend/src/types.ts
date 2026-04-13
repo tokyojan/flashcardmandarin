@@ -6,7 +6,16 @@ export interface RawEntry {
   pos: string;
   word_frequency: number | string;
   useful_for_flashcard: boolean;
+  english?: string;
+  italian?: string;
 }
+
+export type MnemonicLang = "english" | "italian";
+
+export const SUPPORTED_LANGUAGES: { key: MnemonicLang; label: string }[] = [
+  { key: "english", label: "English" },
+  { key: "italian", label: "Italian" },
+];
 
 export interface Card {
   id: number;
@@ -22,6 +31,8 @@ export interface Card {
   lapses: number;
   due: string;
   isNew: boolean;
+  mnemonicEnglish?: string;
+  mnemonicItalian?: string;
 }
 
 export type Grade = 0 | 3 | 4 | 5;
@@ -45,6 +56,7 @@ export interface Settings {
   dailyNew: number;
   reversed: boolean;
   darkMode: "system" | "light" | "dark";
+  mnemonicLangs: Record<MnemonicLang, boolean>;
 }
 
 export interface SessionGrades {

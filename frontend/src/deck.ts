@@ -43,9 +43,15 @@ export function buildDeckFromRaw(
     if (seen.has(key)) continue;
     seen.add(key);
 
-    cards.push(
-      makeNewCard(cards.length + 1, hanzi, pinyin, meaning, lvl, (row.pos ?? "noun").trim().toLowerCase(), freq)
+    const card = makeNewCard(
+      cards.length + 1, hanzi, pinyin, meaning, lvl,
+      (row.pos ?? "noun").trim().toLowerCase(), freq
     );
+    const en = (row.english ?? "").trim();
+    const it = (row.italian ?? "").trim();
+    if (en) card.mnemonicEnglish = en;
+    if (it) card.mnemonicItalian = it;
+    cards.push(card);
   }
 
   return cards;

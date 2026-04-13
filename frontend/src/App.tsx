@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import type { Card, CefrSelection, Grade, RawEntry, SessionGrades, Settings, StudyStats } from "./types";
-import { CEFR_ORDER } from "./types";
+import type { Card, CefrSelection, Grade, MnemonicLang, RawEntry, SessionGrades, Settings, StudyStats } from "./types";
+import { CEFR_ORDER, SUPPORTED_LANGUAGES } from "./types";
 import { buildDeckFromRaw, mergeDeckProgress, buildSession } from "./deck";
 import { scheduleSm2, previewInterval, formatInterval } from "./sm2";
 import {
@@ -52,6 +52,27 @@ export default function App() {
   return <FlashcardApp user={session.user} />;
 }
 
+function MnemonicList({ card, langs }: { card: Card; langs: Record<MnemonicLang, boolean> }) {
+  const items: { key: MnemonicLang; label: string; text: string }[] = [];
+  if (langs.english && card.mnemonicEnglish?.trim()) {
+    items.push({ key: "english", label: "EN", text: card.mnemonicEnglish.trim() });
+  }
+  if (langs.italian && card.mnemonicItalian?.trim()) {
+    items.push({ key: "italian", label: "IT", text: card.mnemonicItalian.trim() });
+  }
+  if (items.length === 0) return null;
+  return (
+    <div className="mnemonics">
+      {items.map(({ key, label, text }) => (
+        <div key={key} className="mnemonic">
+          <span className="mnemonic-lang">{label}</span>
+          <span className="mnemonic-text">{text}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function FlashcardApp({ user }: { user: { id: string; name: string; email: string } }) {
   const [phase, setPhase] = useState<Phase>("loading");
   const [cards, setCards] = useState<Card[]>([]);
@@ -61,7 +82,8 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
   const [revealed, setRevealed] = useState(false);
   const [reviews, setReviews] = useState(0);
   const [cefrSel, setCefrSel] = useState<CefrSelection>("A1");
-  const [dailyNew, setDailyNew] = useState(25);
+  const [dailyNew, setDailyNew] = useState(10);
+  const [mnemonicLangs, setMnemonicLangs] = useState<Record<MnemonicLang, boolean>>({ english: true, italian: true });
   const [reversed, setReversed] = useState(false);
   const [darkMode, setDarkMode] = useState<Settings["darkMode"]>("system");
   const [undoStack, setUndoStack] = useState<Card[]>([]);
@@ -116,8 +138,8 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
   // Persist settings on change
   useEffect(() => {
     if (phase === "loading") return; // don't save defaults before load completes
-    saveUserData("settings", { cefrSel, dailyNew, reversed, darkMode });
-  }, [cefrSel, dailyNew, reversed, darkMode, phase]);
+    saveUserData("settings", { cefrSel, dailyNew, reversed, darkMode, mnemonicLangs });
+  }, [cefrSel, dailyNew, reversed, darkMode, mnemonicLangs, phase]);
 
   // Flush pending deck save on unmount
   useEffect(() => {
@@ -148,6 +170,7 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
         setDailyNew(s.dailyNew);
         setReversed(s.reversed);
         setDarkMode(s.darkMode);
+        if (s.mnemonicLangs) setMnemonicLangs(s.mnemonicLangs);
         setStats(userData.stats);
 
         // Build deck, merge with saved progress
@@ -314,7 +337,7 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
   const handleExport = useCallback(() => {
     const data = JSON.stringify({
       deck: cards, stats,
-      settings: { cefrSel, dailyNew, reversed, darkMode },
+      settings: { cefrSel, dailyNew, reversed, darkMode, mnemonicLangs },
       exportDate: new Date().toISOString(),
     }, null, 2);
     const blob = new Blob([data], { type: "application/json" });
@@ -325,7 +348,7 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
     a.click();
     URL.revokeObjectURL(url);
     showFlash("Backup exported");
-  }, [cards, stats, cefrSel, dailyNew, reversed, darkMode, showFlash]);
+  }, [cards, stats, cefrSel, dailyNew, reversed, darkMode, mnemonicLangs, showFlash]);
 
   const handleImportFile = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -352,6 +375,7 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
             setDailyNew(data.settings.dailyNew);
             setReversed(data.settings.reversed);
             setDarkMode(data.settings.darkMode);
+            if (data.settings.mnemonicLangs) setMnemonicLangs(data.settings.mnemonicLangs);
           }
           showFlash("Backup imported successfully");
           setShowStats(false);
@@ -438,6 +462,16 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
             <input type="checkbox" checked={reversed} onChange={() => setReversed(!reversed)} />
             <span>Hanzi first</span>
           </label>
+          {SUPPORTED_LANGUAGES.map(({ key, label }) => (
+            <label key={key} className="toolbar-check">
+              <input
+                type="checkbox"
+                checked={mnemonicLangs[key]}
+                onChange={() => setMnemonicLangs((m) => ({ ...m, [key]: !m[key] }))}
+              />
+              <span>{label}</span>
+            </label>
+          ))}
         </div>
         <div className="toolbar-right">
           <button className="toolbar-icon" onClick={cycleDarkMode} title={`Theme: ${darkMode}`}>{darkModeIcon}</button>
@@ -502,6 +536,7 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
                     </button>
                   </div>
                   <span className="pinyin">{currentCard.pinyin}</span>
+                  <MnemonicList card={currentCard} langs={mnemonicLangs} />
                 </div>
               ) : (
                 <div className="card-meaning">{currentCard.meaning}</div>

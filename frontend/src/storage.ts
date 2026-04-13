@@ -2,9 +2,10 @@ import type { Settings, StudyStats, DayStats, Card, PersistedSession } from "./t
 
 const DEFAULT_SETTINGS: Settings = {
   cefrSel: "A1",
-  dailyNew: 25,
+  dailyNew: 5,
   reversed: false,
   darkMode: "system",
+  mnemonicLangs: { english: true, italian: true },
 };
 
 // --- API helpers ---
