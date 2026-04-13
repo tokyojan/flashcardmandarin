@@ -1,13 +1,32 @@
 import "dotenv/config";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { compress } from "hono/compress";
 import { serve } from "@hono/node-server";
+import { readFileSync } from "node:fs";
 import { auth } from "../auth";
 import { initDb, getAllUserData, setUserData, deleteUserData } from "./db";
+
+type RawEntry = {
+  word: string;
+  romanization: string;
+  english_translation: string;
+  cefr_level: string;
+  pos: string;
+  word_frequency: number | string;
+  useful_for_flashcard: boolean;
+  english?: string;
+  italian?: string;
+};
+
+const RAW_DECK: RawEntry[] = JSON.parse(readFileSync("./mandarin.json", "utf-8"));
+const CEFR_ORDER = new Set(["A1", "A2", "B1", "B2", "C1", "C2"]);
 
 const app = new Hono<{
   Variables: { userId: string };
 }>();
+
+app.use("*", compress());
 
 app.use(
   "/api/*",
@@ -18,6 +37,19 @@ app.use(
     credentials: true,
   })
 );
+
+// --- Raw deck (public, filtered by CEFR) ---
+app.get("/api/raw-deck", (c) => {
+  const cefr = (c.req.query("cefr") ?? "ALL").toUpperCase();
+  const exact = CEFR_ORDER.has(cefr);
+  const rows = RAW_DECK.filter((r) => {
+    if (!r.useful_for_flashcard) return false;
+    if (!exact) return true;
+    return (r.cefr_level ?? "").trim().toUpperCase() === cefr;
+  });
+  c.header("Cache-Control", "public, max-age=3600");
+  return c.json(rows);
+});
 
 // --- Auth ---
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));

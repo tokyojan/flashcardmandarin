@@ -152,15 +152,16 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
   }, [cards]);
 
   // Initial load from PostgreSQL
+  const didInitRef = useRef(false);
   useEffect(() => {
+    if (didInitRef.current) return;
+    didInitRef.current = true;
     async function load() {
       try {
-        const [rawResp, userData] = await Promise.all([
-          fetch("/mandarin.json"),
-          loadAllUserData(),
-        ]);
-
-        if (!rawResp.ok) throw new Error("mandarin.json not found in /public");
+        const userData = await loadAllUserData();
+        const cefrForFetch = userData.settings?.cefrSel ?? "ALL";
+        const rawResp = await fetch(`/api/raw-deck?cefr=${encodeURIComponent(cefrForFetch)}`);
+        if (!rawResp.ok) throw new Error("Failed to load raw deck");
         const data: RawEntry[] = await rawResp.json();
         rawDataRef.current = data;
 
@@ -208,13 +209,16 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
       }
     }
     load();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // --- Actions ---
 
-  const rebuildDeck = useCallback(() => {
-    if (!rawDataRef.current) return;
-    const fresh = buildDeckFromRaw(rawDataRef.current, cefrSel);
+  const rebuildDeck = useCallback(async () => {
+    const resp = await fetch(`/api/raw-deck?cefr=${encodeURIComponent(cefrSel)}`);
+    if (!resp.ok) { showFlash("Failed to fetch deck"); return; }
+    const data: RawEntry[] = await resp.json();
+    rawDataRef.current = data;
+    const fresh = buildDeckFromRaw(data, cefrSel);
     const deck = mergeDeckProgress(fresh, cards);
     setCards(deck);
     saveUserData("deck", deck);
@@ -522,7 +526,7 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
         ) : phase === "ready" ? (
           <div className="done-screen">
             <h2>No data loaded</h2>
-            <p>Place <code>mandarin.json</code> in the <code>public/</code> folder and reload.</p>
+            <p>Backend returned no data. Check <code>/api/raw-deck</code>.</p>
           </div>
         ) : currentCard ? (
           <>
