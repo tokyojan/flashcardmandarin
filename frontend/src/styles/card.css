@@ -1,0 +1,239 @@
+/* Flashcard, mnemonics, review controls, and done screen */
+
+.card {
+  width: 100%;
+  max-width: 560px;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 32px 24px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+.card-meaning {
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text-strong);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.card-chinese {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.hanzi-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hanzi {
+  font-family: var(--font-chinese);
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--text-strong);
+  line-height: 1.2;
+}
+
+.pinyin {
+  font-size: 18px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.mnemonics {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+  max-width: 640px;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--muted, #888);
+  text-align: center;
+}
+
+.mnemonic-lang {
+  display: inline-block;
+  font-style: normal;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+  margin-right: 6px;
+}
+
+.btn-speak {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  background: none;
+  border: none;
+  color: var(--text);
+  cursor: pointer;
+  opacity: 0.5;
+  transition: all 0.15s;
+  border-radius: 4px;
+}
+.btn-speak:hover {
+  opacity: 1;
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.card-answer {
+  padding-top: 12px;
+  margin-top: 4px;
+  border-top: 1px dashed var(--border);
+  animation: slideUp 0.2s ease-out;
+}
+
+.card-answer .card-meaning { color: var(--info); font-weight: 600; }
+
+.card-meta {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text);
+  margin-top: 12px;
+}
+
+.badge-new {
+  background: var(--success);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 4px;
+}
+
+.badge-leech {
+  background: var(--warning);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 4px;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  margin-top: 24px;
+  width: 100%;
+  max-width: 560px;
+}
+
+.progress-text { font-size: 12px; color: var(--text); }
+
+.btn-reveal {
+  padding: 12px 48px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent-bg);
+  color: var(--accent);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-reveal:hover { background: var(--accent); color: #fff; }
+
+.grade-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.btn-grade {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 16px 8px;
+  min-width: 80px;
+  font-family: inherit;
+  border: 2px solid;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.15s;
+  background: transparent;
+}
+
+.btn-grade .grade-label { font-size: 14px; font-weight: 600; }
+.btn-grade .grade-interval { font-size: 11px; opacity: 0.7; }
+
+.btn-again { border-color: var(--danger); color: var(--danger); }
+.btn-again:hover { background: var(--danger); color: #fff; }
+
+.btn-hard { border-color: var(--warning); color: var(--warning); }
+.btn-hard:hover { background: var(--warning); color: #fff; }
+
+.btn-good { border-color: var(--success); color: var(--success); }
+.btn-good:hover { background: var(--success); color: #fff; }
+
+.btn-easy { border-color: var(--info); color: var(--info); }
+.btn-easy:hover { background: var(--info); color: #fff; }
+
+.secondary-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.done-screen {
+  text-align: center;
+  max-width: 400px;
+}
+
+.done-icon { font-size: 56px; margin-bottom: 12px; }
+
+.done-screen h2 { margin-bottom: 16px; }
+
+.done-stats {
+  margin: 20px 0 24px;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-raised);
+}
+
+.done-stats p { margin: 4px 0; }
+
+.done-breakdown {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 10px 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.grade-again { color: var(--danger); }
+.grade-hard { color: var(--warning); }
+.grade-good { color: var(--success); }
+.grade-easy { color: var(--info); }
+
+.done-accuracy {
+  font-size: 18px;
+  color: var(--text-strong);
+}

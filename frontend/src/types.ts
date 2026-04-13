@@ -51,12 +51,64 @@ export interface StudyStats {
   history: Record<string, DayStats>;
 }
 
+export type DesignTheme =
+  | "classic"
+  | "ink"
+  | "sakura"
+  | "paper"
+  | "minimal"
+  | "brutalist"
+  | "solarized"
+  | "terminal"
+  | "neon"
+  | "aurora";
+
+export const DESIGN_THEMES: { key: DesignTheme; label: string }[] = [
+  { key: "classic", label: "Classic" },
+  { key: "ink", label: "Ink \u00b7 \u58a8" },
+  { key: "sakura", label: "Sakura \u00b7 \u685c" },
+  { key: "paper", label: "Paper" },
+  { key: "minimal", label: "Minimal" },
+  { key: "brutalist", label: "Brutalist" },
+  { key: "solarized", label: "Solarized" },
+  { key: "terminal", label: "Terminal" },
+  { key: "neon", label: "Neon" },
+  { key: "aurora", label: "Aurora" },
+];
+
+export type LayoutVariant =
+  | "classic"
+  | "focused"
+  | "stack"
+  | "split"
+  | "sidebar"
+  | "compact"
+  | "magazine"
+  | "zen"
+  | "theater"
+  | "immersive";
+
+export const LAYOUT_VARIANTS: { key: LayoutVariant; label: string }[] = [
+  { key: "classic", label: "Classic" },
+  { key: "focused", label: "Focused" },
+  { key: "stack", label: "Stack" },
+  { key: "split", label: "Split" },
+  { key: "sidebar", label: "Sidebar" },
+  { key: "compact", label: "Compact" },
+  { key: "magazine", label: "Magazine" },
+  { key: "zen", label: "Zen" },
+  { key: "theater", label: "Theater" },
+  { key: "immersive", label: "Immersive" },
+];
+
 export interface Settings {
   cefrSel: CefrSelection;
   dailyNew: number;
   reversed: boolean;
   darkMode: "system" | "light" | "dark";
   mnemonicLangs: Record<MnemonicLang, boolean>;
+  designTheme: DesignTheme;
+  layoutVariant: LayoutVariant;
 }
 
 export interface SessionGrades {

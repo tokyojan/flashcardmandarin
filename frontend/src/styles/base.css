@@ -1,0 +1,60 @@
+/* App shell + animations + responsive base */
+
+.app {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+.center-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100svh;
+  font-size: 16px;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px 40px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 640px) {
+  .toolbar { padding: 8px 12px; gap: 8px; }
+  .toolbar-left, .toolbar-right { gap: 6px; }
+  .toolbar-right { flex-wrap: wrap; justify-content: flex-end; }
+  .toolbar-divider { display: none; }
+
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+
+  .card { padding: 28px 20px 20px; min-height: 200px; }
+  .hanzi { font-size: 40px; }
+  .card-meaning { font-size: 18px; }
+
+  .grade-buttons { gap: 6px; }
+  .btn-grade { min-width: 68px; padding: 8px 10px 6px; }
+  .btn-grade .grade-label { font-size: 12px; }
+
+  .browse-header-row, .browse-row {
+    grid-template-columns: 50px 70px 1fr 50px 32px;
+    gap: 4px;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+
+  .modal { padding: 16px; }
+}

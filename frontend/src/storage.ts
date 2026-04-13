@@ -6,6 +6,8 @@ const DEFAULT_SETTINGS: Settings = {
   reversed: false,
   darkMode: "system",
   mnemonicLangs: { english: true, italian: true },
+  designTheme: "classic",
+  layoutVariant: "classic",
 };
 
 // --- API helpers ---
