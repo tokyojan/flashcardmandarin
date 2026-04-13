@@ -19,7 +19,7 @@ BACKUP_DIR       = "deck_backups"
 BACKUP_RETENTION = 30   # keep N latest timestamped backups
 
 # Session controls
-DAILY_NEW_LIMIT_DEFAULT = 25
+DAILY_NEW_LIMIT_DEFAULT = 10
 
 # Dataset filters (defaults)
 ONLY_FLASHCARD_TRUE = True
@@ -27,6 +27,13 @@ MAX_WORDS = 5000                 # maximum rows to ingest
 EXCLUDE_POS = set()              # e.g., {"particle","interjection"} to skip
 CEFR_DEFAULT = "A1"
 CEFR_ORDER = ["A1","A2","B1","B2","C1","C2"]
+
+# Mnemonic languages: key must match the JSON field name exactly.
+# Add more here as new languages are added to the dataset.
+SUPPORTED_LANGUAGES: List[Tuple[str, str]] = [
+    ("english", "English"),
+    ("italian", "Italian"),
+]
 
 
 # ---------------------------
@@ -49,10 +56,17 @@ class Card:
     lapses: int = 0
     due: str = field(default_factory=lambda: dt.date.today().isoformat())
     is_new: bool = True
+    # Mnemonics keyed by language code (e.g. {"english": "...", "italian": "..."})
+    mnemonics: Dict[str, str] = field(default_factory=dict)
 
-    def as_dict(self) -> Dict: return asdict(self)
+    def as_dict(self) -> Dict:
+        return asdict(self)
+
     @staticmethod
-    def from_dict(d: Dict) -> "Card": return Card(**d)
+    def from_dict(d: Dict) -> "Card":
+        d = dict(d)
+        d.setdefault("mnemonics", {})   # backward-compat with old deck files
+        return Card(**d)
 
 
 # ---------------------------
@@ -68,7 +82,6 @@ def cefr_exact_match(level: str, selection: str) -> bool:
     """
     sel = (selection or "").strip().upper()
     if sel not in CEFR_ORDER:
-        # ALL or invalid -> include everything
         return True
     lvl = (level or "").strip().upper()
     return lvl == sel
@@ -103,14 +116,11 @@ def backup_deck_file() -> None:
         if not os.path.exists(DECK_FILE):
             return
         os.makedirs(BACKUP_DIR, exist_ok=True)
-        # stable
         stable_path = os.path.join(BACKUP_DIR, "deck_mandarin.backup.json")
         shutil.copy2(DECK_FILE, stable_path)
-        # timestamped
         ts = dt.datetime.now().strftime("%Y%m%d-%H%M%S")
         ts_path = os.path.join(BACKUP_DIR, f"deck_{ts}.json")
         shutil.copy2(DECK_FILE, ts_path)
-        # retention
         entries = []
         for name in os.listdir(BACKUP_DIR):
             if name.startswith("deck_") and name.endswith(".json"):
@@ -126,7 +136,7 @@ def backup_deck_file() -> None:
             except Exception:
                 pass
     except Exception:
-        pass  # never break save flow
+        pass
 
 
 # ---------------------------
@@ -144,7 +154,7 @@ def format_debug_report(
     after_counts: Dict[str, int],
     after_unknown: int,
     cefr_sel: str,
-    sample_kept: List[Tuple[str, str, str, int]]  # (hanzi, pinyin, cefr, freq)
+    sample_kept: List[Tuple[str, str, str, int]]
 ) -> str:
     lines = []
     lines.append("=== Deck Rebuild Debug Report ===")
@@ -184,16 +194,12 @@ def load_cards_from_json(
     cefr_selection: str,
     debug: bool = False
 ) -> Tuple[List[Card], Optional[str]]:
-    """
-    Build cards from JSON applying EXACT CEFR selection.
-    Returns (cards, debug_report or None).
-    """
+    """Build cards from JSON applying EXACT CEFR selection."""
     if not os.path.exists(JSON_FILE):
         raise FileNotFoundError(JSON_FILE)
     with open(JSON_FILE, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # Pre-counts
     raw_total = len(data)
     before_counts: Dict[str, int] = {k:0 for k in CEFR_ORDER}
     before_unknown = 0
@@ -208,7 +214,6 @@ def load_cards_from_json(
     kept_unknown = 0
 
     for r in rows:
-        # useful_for_flashcard filter
         if ONLY_FLASHCARD_TRUE and not r.get("useful_for_flashcard"):
             excl_useful += 1
             continue
@@ -225,7 +230,7 @@ def load_cards_from_json(
 
         hanzi   = (r.get("word") or "").strip()
         pinyin  = normalize_pinyin(r.get("romanization") or "")
-        meaning = " ".join((r.get("english_translation") or "").split())  # whitespace-only
+        meaning = " ".join((r.get("english_translation") or "").split())
         try:
             freq = int(r.get("word_frequency"))
         except Exception:
@@ -238,9 +243,17 @@ def load_cards_from_json(
         if lvl not in CEFR_ORDER:
             kept_unknown += 1
 
+        # Collect all supported mnemonic languages present in this row
+        mnemonics = {
+            lang_key: r[lang_key].strip()
+            for lang_key, _ in SUPPORTED_LANGUAGES
+            if r.get(lang_key) and r[lang_key].strip()
+        }
+
         out.append(Card(
             id=0, hanzi=hanzi, pinyin=pinyin, meaning=meaning,
-            cefr=lvl, pos=pos or "noun", freq=freq
+            cefr=lvl, pos=pos or "noun", freq=freq,
+            mnemonics=mnemonics,
         ))
 
         if len(out) >= MAX_WORDS:
@@ -257,7 +270,6 @@ def load_cards_from_json(
     for i, c in enumerate(final, 1):
         c.id = i
 
-    # After-counts
     after_counts: Dict[str,int] = {k:0 for k in CEFR_ORDER}
     after_unknown = 0
     for c in final:
@@ -287,11 +299,10 @@ def load_cards_from_json(
 def save_deck(cards: List[Card]) -> None:
     with open(DECK_FILE, "w", encoding="utf-8") as f:
         json.dump([c.as_dict() for c in cards], f, ensure_ascii=False, indent=2)
-    backup_deck_file()  # always back up after save
+    backup_deck_file()
 
 
 def load_or_build_deck(cefr_sel: str) -> List[Card]:
-    """Load existing deck if present; if missing, build with CEFR selection."""
     if os.path.exists(DECK_FILE):
         with open(DECK_FILE, "r", encoding="utf-8") as f:
             return [Card.from_dict(d) for d in json.load(f)]
@@ -322,15 +333,21 @@ def build_session(cards: List[Card], daily_new_limit: int) -> List[int]:
 import tkinter as tk
 from tkinter import ttk, messagebox
 
+
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Mandarin Flashcards")
-        self.geometry("940x600")
+        self.geometry("940x680")
 
-        # Runtime filters
-        self.cefr_sel = tk.StringVar(value=CEFR_DEFAULT)  # "A1", or one of CEFR_ORDER
+        self.cefr_sel  = tk.StringVar(value=CEFR_DEFAULT)
         self.debug_var = tk.BooleanVar(value=False)
+
+        # One BooleanVar per supported language, all enabled by default
+        self.lang_vars: Dict[str, tk.BooleanVar] = {
+            lang_key: tk.BooleanVar(value=True)
+            for lang_key, _ in SUPPORTED_LANGUAGES
+        }
 
         try:
             self.cards = load_or_build_deck(self.cefr_sel.get())
@@ -339,9 +356,9 @@ class App(tk.Tk):
         self.id2 = {c.id: c for c in self.cards}
 
         self.daily   = tk.IntVar(value=DAILY_NEW_LIMIT_DEFAULT)
-        self.reverse = tk.BooleanVar(value=False)     # False: front=English; True: front=“汉字 — pinyin”
+        self.reverse = tk.BooleanVar(value=False)
         self.session = build_session(self.cards, self.daily.get())
-        self.idx = -1
+        self.idx      = -1
         self.revealed = False
         self.reviews  = 0
 
@@ -354,7 +371,7 @@ class App(tk.Tk):
     def _build_widgets(self) -> None:
         top = ttk.Frame(self); top.pack(fill="x", padx=12, pady=8)
 
-        # CEFR dropdown (EXACT selection)
+        # CEFR dropdown
         ttk.Label(top, text="CEFR (exact):").pack(side="left", padx=(0,4))
         cefr_values = ["ALL"] + CEFR_ORDER
         self.cefr_box = ttk.Combobox(top, width=6, textvariable=self.cefr_sel,
@@ -362,11 +379,12 @@ class App(tk.Tk):
         self.cefr_box.pack(side="left", padx=(0,12))
 
         ttk.Label(top, text="Daily new:").pack(side="left")
-        ttk.Spinbox(top, from_=0,to=200,width=6, textvariable=self.daily,
+        ttk.Spinbox(top, from_=0, to=200, width=6, textvariable=self.daily,
                     command=self._rebuild_session, takefocus=0).pack(side="left", padx=(4,12))
 
         ttk.Checkbutton(top, text="Pinyin first",
-                        variable=self.reverse, command=self._refresh_view, takefocus=0).pack(side="left", padx=(0,12))
+                        variable=self.reverse, command=self._refresh_view,
+                        takefocus=0).pack(side="left", padx=(0,12))
 
         ttk.Checkbutton(top, text="Debug Mode",
                         variable=self.debug_var).pack(side="left")
@@ -376,47 +394,71 @@ class App(tk.Tk):
         ttk.Button(top, text="Rebuild Session",
                    command=self._rebuild_session, takefocus=0).pack(side="right", padx=(0,8))
 
+        # ---- Mnemonic language checkboxes ----
+        lang_row = ttk.Frame(self)
+        lang_row.pack(fill="x", padx=12, pady=(0, 4))
+        ttk.Label(lang_row, text="Pinyin mnemonics:").pack(side="left", padx=(0, 8))
+        for lang_key, lang_label in SUPPORTED_LANGUAGES:
+            ttk.Checkbutton(
+                lang_row,
+                text=lang_label,
+                variable=self.lang_vars[lang_key],
+                command=self._refresh_mnemonics,
+                takefocus=0,
+            ).pack(side="left", padx=(0, 10))
+
+        # ---- Card area ----
         box = ttk.LabelFrame(self, text="Card")
-        box.pack(fill="both", expand=True, padx=12, pady=8)
+        box.pack(fill="both", expand=True, padx=12, pady=4)
 
         self.front_lbl = ttk.Label(box, font=("Helvetica", 19), wraplength=880,
                                    anchor="center", justify="center")
-        self.front_lbl.pack(expand=True, pady=(24, 10))
+        self.front_lbl.pack(expand=True, pady=(20, 8))
 
-        self.back_lbl  = ttk.Label(box, font=("Helvetica", 22, "bold"), foreground="#1a73e8",
-                                   wraplength=880, anchor="center", justify="center")
-        self.back_lbl.pack(expand=True, pady=(0, 10))
+        self.back_lbl = ttk.Label(box, font=("Helvetica", 22, "bold"), foreground="#1a73e8",
+                                  wraplength=880, anchor="center", justify="center")
+        self.back_lbl.pack(expand=True, pady=(0, 4))
 
-        self.meta_lbl  = ttk.Label(box, font=("Helvetica", 11), foreground="#666")
+        # Mnemonic label — shown when pinyin is visible
+        self.mnemonic_lbl = ttk.Label(
+            box,
+            font=("Helvetica", 11, "italic"),
+            foreground="#888",
+            wraplength=880,
+            anchor="center",
+            justify="center",
+        )
+        self.mnemonic_lbl.pack(pady=(0, 6))
+
+        self.meta_lbl = ttk.Label(box, font=("Helvetica", 11), foreground="#666")
         self.meta_lbl.pack()
 
+        # ---- Bottom bar ----
         bottom = ttk.Frame(self); bottom.pack(fill="x", padx=12, pady=8)
         self.progress = tk.StringVar(value="")
         ttk.Label(bottom, textvariable=self.progress).pack(side="left")
 
-        self.btn_copy   = ttk.Button(bottom, text="📋 Copy Chinese (C)", command=self._copy_chinese, takefocus=0)
+        self.btn_copy   = ttk.Button(bottom, text="📋 Copy Chinese (C)",
+                                     command=self._copy_chinese, takefocus=0)
         self.btn_copy.pack(side="right", padx=(8, 0))
-        self.btn_reveal = ttk.Button(bottom, text="Reveal (Space)", command=self._reveal_or_advance, takefocus=0)
+        self.btn_reveal = ttk.Button(bottom, text="Reveal (Space)",
+                                     command=self._reveal_or_advance, takefocus=0)
         self.btn_reveal.pack(side="right")
 
         gb = ttk.Frame(bottom); gb.pack(side="right", padx=12)
-        self.b_again=ttk.Button(gb,text="Again (1)",command=lambda:self._grade(0), takefocus=0)
-        self.b_hard =ttk.Button(gb,text="Hard (2)", command=lambda:self._grade(3), takefocus=0)
-        self.b_good =ttk.Button(gb,text="Good (3)", command=lambda:self._grade(4), takefocus=0)
-        self.b_easy =ttk.Button(gb,text="Easy (4)", command=lambda:self._grade(5), takefocus=0)
-        for b in (self.b_again,self.b_hard,self.b_good,self.b_easy):
+        self.b_again = ttk.Button(gb, text="Again (1)", command=lambda: self._grade(0), takefocus=0)
+        self.b_hard  = ttk.Button(gb, text="Hard (2)",  command=lambda: self._grade(3), takefocus=0)
+        self.b_good  = ttk.Button(gb, text="Good (3)",  command=lambda: self._grade(4), takefocus=0)
+        self.b_easy  = ttk.Button(gb, text="Easy (4)",  command=lambda: self._grade(5), takefocus=0)
+        for b in (self.b_again, self.b_hard, self.b_good, self.b_easy):
             b.pack(side="left", padx=4)
 
     def _bind_keys(self) -> None:
-        # Space/Enter behave exactly like clicking Reveal (stop propagation with "break")
         self.bind_all("<Key-space>",  self._on_space)
         self.bind_all("<Key-Return>", self._on_enter)
-        # Copy Hanzi
         self.bind_all("c", self._on_copy)
         self.bind_all("C", self._on_copy)
-        # Prevent Space from "clicking" the Reveal button
         self.btn_reveal.bind("<Key-space>", lambda e: "break")
-        # Numeric grading keys (top row + numpad)
         self.bind_all("<Key-1>",    self._on_grade_1)
         self.bind_all("<Key-2>",    self._on_grade_2)
         self.bind_all("<Key-3>",    self._on_grade_3)
@@ -426,34 +468,61 @@ class App(tk.Tk):
         self.bind_all("<Key-KP_3>", self._on_grade_3)
         self.bind_all("<Key-KP_4>", self._on_grade_4)
 
-    # Key handlers that ALWAYS return "break"
     def _on_space(self, event):  self._reveal_or_advance(); return "break"
     def _on_enter(self, event):  self._reveal_or_advance(); return "break"
     def _on_copy(self, event):   self._copy_chinese();      return "break"
-    def _on_grade_1(self, e):    self._grade(0);            return "break"  # Again
-    def _on_grade_2(self, e):    self._grade(3);            return "break"  # Hard
-    def _on_grade_3(self, e):    self._grade(4);            return "break"  # Good
-    def _on_grade_4(self, e):    self._grade(5);            return "break"  # Easy
+    def _on_grade_1(self, e):    self._grade(0);            return "break"
+    def _on_grade_2(self, e):    self._grade(3);            return "break"
+    def _on_grade_3(self, e):    self._grade(4);            return "break"
+    def _on_grade_4(self, e):    self._grade(5);            return "break"
+
+    # --- Mnemonic rendering ---
+
+    def _build_mnemonic_text(self, card: Card) -> str:
+        """Assemble mnemonic text for currently enabled languages."""
+        parts = []
+        for lang_key, lang_label in SUPPORTED_LANGUAGES:
+            if self.lang_vars[lang_key].get():
+                text = card.mnemonics.get(lang_key, "").strip()
+                if text:
+                    parts.append(f"[{lang_label}] {text}")
+        return "\n".join(parts)
+
+    def _show_mnemonics(self, card: Card) -> None:
+        """Display mnemonics for the given card (call when pinyin is visible)."""
+        text = self._build_mnemonic_text(card)
+        self.mnemonic_lbl.config(text=text)
+
+    def _hide_mnemonics(self) -> None:
+        self.mnemonic_lbl.config(text="")
+
+    def _refresh_mnemonics(self) -> None:
+        """Called when a language checkbox is toggled — update display in-place."""
+        if not (0 <= self.idx < len(self.session)):
+            return
+        c = self.id2[self.session[self.idx]]
+        pinyin_visible = self.revealed or self.reverse.get()
+        if pinyin_visible:
+            self._show_mnemonics(c)
+        else:
+            self._hide_mnemonics()
 
     # --- Flow ---
-    def _rebuild_deck(self) -> None:
-        """Apply EXACT CEFR selection and rebuild the deck; show debug if enabled."""
-        try:
-            cap = self.cefr_sel.get()  # "ALL" or A1..C2
-            debug = self.debug_var.get()
 
+    def _rebuild_deck(self) -> None:
+        try:
+            cap   = self.cefr_sel.get()
+            debug = self.debug_var.get()
             cards, report = load_cards_from_json(cap, debug=debug)
             save_deck(cards)
             self.cards = cards
-            self.id2 = {c.id: c for c in self.cards}
+            self.id2   = {c.id: c for c in self.cards}
             self._rebuild_session()
-
             if debug and report:
-                print("\n" + report + "\n")           # console (IDE-friendly)
-                self._show_debug_window(report)       # popup window
+                print("\n" + report + "\n")
+                self._show_debug_window(report)
             else:
                 messagebox.showinfo("Deck", f"Deck rebuilt (CEFR={cap}).")
-
         except Exception as e:
             messagebox.showerror("Rebuild failed", str(e))
 
@@ -468,18 +537,20 @@ class App(tk.Tk):
 
     def _rebuild_session(self) -> None:
         self.session = build_session(self.cards, self.daily.get())
-        self.idx = -1
-        self.reviews = 0
+        self.idx      = -1
+        self.reviews  = 0
         self._next_card()
 
     def _next_card(self) -> None:
         self.idx += 1
+        self._hide_mnemonics()
+
         if self.idx >= len(self.session):
             self.front_lbl.config(text="🎉 All done for today")
             self.back_lbl.config(text="")
             self.meta_lbl.config(text="")
             self.progress.set(f"Session complete • Reviews: {self.reviews}")
-            for b in (self.b_again,self.b_hard,self.b_good,self.b_easy):
+            for b in (self.b_again, self.b_hard, self.b_good, self.b_easy):
                 b.config(state="disabled")
             self.btn_reveal.config(state="disabled")
             self.btn_copy.config(state="disabled")
@@ -489,45 +560,53 @@ class App(tk.Tk):
         c = self.id2[self.session[self.idx]]
 
         if not self.reverse.get():
+            # Front = English meaning
             self.front_lbl.config(text=c.meaning)
             self.back_lbl.config(text="")
         else:
+            # Front = Hanzi + Pinyin → mnemonics visible immediately
             self.front_lbl.config(text=f"{c.hanzi} — {c.pinyin}")
             self.back_lbl.config(text="")
+            self._show_mnemonics(c)
 
-        self.meta_lbl.config(text=f"CEFR: {c.cefr or 'Unknown'} • POS: {c.pos} • Freq#: {c.freq}")
-        self.progress.set(f"Card {self.idx+1}/{len(self.session)}  • Reviews: {self.reviews}")
-
-        for b in (self.b_again,self.b_hard,self.b_good,self.b_easy):
+        self.meta_lbl.config(
+            text=f"CEFR: {c.cefr or 'Unknown'} • POS: {c.pos} • Freq#: {c.freq}"
+        )
+        self.progress.set(
+            f"Card {self.idx+1}/{len(self.session)}  • Reviews: {self.reviews}"
+        )
+        for b in (self.b_again, self.b_hard, self.b_good, self.b_easy):
             b.config(state="disabled")
         self.btn_reveal.config(state="normal")
         self.btn_copy.config(state="normal")
-
-        self.focus_set()  # avoid Space "clicking" focused button
+        self.focus_set()
 
     def _reveal_or_advance(self) -> None:
-        if not (0 <= self.idx < len(self.session)): return
+        if not (0 <= self.idx < len(self.session)):
+            return
         c = self.id2[self.session[self.idx]]
 
         if not self.revealed:
-            # Reveal
+            # Reveal back
             if not self.reverse.get():
                 self.back_lbl.config(text=f"{c.hanzi} — {c.pinyin}")
+                self._show_mnemonics(c)   # pinyin now visible → show mnemonics
             else:
                 self.back_lbl.config(text=c.meaning)
+                # mnemonics already shown on front in reverse mode
             self.revealed = True
-            for b in (self.b_again,self.b_hard,self.b_good,self.b_easy):
+            for b in (self.b_again, self.b_hard, self.b_good, self.b_easy):
                 b.config(state="normal")
         else:
-            # Advance
             self._next_card()
 
     def _grade(self, q: int) -> None:
-        if not self.revealed: return
+        if not self.revealed:
+            return
         c = self.id2[self.session[self.idx]]
         schedule_sm2(c, q)
         self.reviews += 1
-        save_deck(self.cards)  # also triggers backups
+        save_deck(self.cards)
         self._next_card()
 
     def _refresh_view(self) -> None:
@@ -536,7 +615,8 @@ class App(tk.Tk):
             self._next_card()
 
     def _copy_chinese(self) -> None:
-        if not (0 <= self.idx < len(self.session)): return
+        if not (0 <= self.idx < len(self.session)):
+            return
         c = self.id2[self.session[self.idx]]
         self.clipboard_clear()
         self.clipboard_append(c.hanzi)
@@ -548,4 +628,3 @@ class App(tk.Tk):
 
 if __name__ == "__main__":
     App().mainloop()
- 
