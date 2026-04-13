@@ -7,6 +7,8 @@ export function AuthPage() {
   const [mode, setMode] = useState<Mode>("signin");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,7 +20,7 @@ export function AuthPage() {
 
     if (mode === "signup") {
       await authClient.signUp.email(
-        { email, password, name },
+        { email, password, name, username },
         {
           onSuccess: () => setLoading(false),
           onError: (ctx) => {
@@ -28,16 +30,23 @@ export function AuthPage() {
         }
       );
     } else {
-      await authClient.signIn.email(
-        { email, password },
-        {
-          onSuccess: () => setLoading(false),
-          onError: (ctx) => {
-            setError(ctx.error.message || "Sign in failed");
-            setLoading(false);
-          },
-        }
-      );
+      const isEmail = identifier.includes("@");
+      const onSuccess = () => setLoading(false);
+      const onError = (ctx: { error: { message?: string } }) => {
+        setError(ctx.error.message || "Sign in failed");
+        setLoading(false);
+      };
+      if (isEmail) {
+        await authClient.signIn.email(
+          { email: identifier, password },
+          { onSuccess, onError }
+        );
+      } else {
+        await authClient.signIn.username(
+          { username: identifier, password },
+          { onSuccess, onError }
+        );
+      }
     }
   };
 
@@ -87,17 +96,44 @@ export function AuthPage() {
             </label>
           )}
 
-          <label className="auth-field">
-            <span>Email</span>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-              autoComplete="email"
-            />
-          </label>
+          {mode === "signup" ? (
+            <>
+              <label className="auth-field">
+                <span>Email</span>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                  autoComplete="email"
+                />
+              </label>
+              <label className="auth-field">
+                <span>Username</span>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="your_username"
+                  required
+                  autoComplete="username"
+                />
+              </label>
+            </>
+          ) : (
+            <label className="auth-field">
+              <span>Email or Username</span>
+              <input
+                type="text"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="you@example.com or username"
+                required
+                autoComplete="username"
+              />
+            </label>
+          )}
 
           <label className="auth-field">
             <span>Password</span>
