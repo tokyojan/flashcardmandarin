@@ -30,6 +30,9 @@ export async function getAllUserData(userId: string) {
     settings: (map.settings as Record<string, unknown> | undefined) ?? null,
     stats: (map.stats as Record<string, unknown> | undefined) ?? { history: {} },
     session: (map.session as Record<string, unknown> | undefined) ?? null,
+    renshuuSchedules: (map.renshuuSchedules as unknown[] | undefined) ?? null,
+    renshuuSettings: (map.renshuuSettings as Record<string, unknown> | undefined) ?? null,
+    renshuuDashboardLayout: (map.renshuuDashboardLayout as unknown[] | undefined) ?? null,
   };
 }
 
