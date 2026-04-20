@@ -21,12 +21,34 @@ import { toneConfusionKey } from "./lib/pinyin";
 import { CardView } from "./components/CardView";
 import { ReviewControls } from "./components/ReviewControls";
 import { DoneScreen } from "./components/DoneScreen";
+import { RenshuuApp } from "./renshuu/RenshuuApp";
+import type { AppMode } from "./types";
 import "./App.css";
+import "./renshuu/renshuu.css";
 
 type Phase = "loading" | "ready" | "review" | "done";
 
 export default function App() {
   const { data: session, isPending } = authClient.useSession();
+  const [appMode, setAppMode] = useState<AppMode>("classic");
+  const [appModeLoaded, setAppModeLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!session) return;
+    let cancelled = false;
+    loadAllUserData()
+      .then((d) => { if (!cancelled) setAppMode(d.settings.appMode ?? "classic"); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setAppModeLoaded(true); });
+    return () => { cancelled = true; };
+  }, [session]);
+
+  const switchApp = useCallback((next: AppMode) => {
+    setAppMode(next);
+    loadAllUserData().then((d) => {
+      saveUserData("settings", { ...d.settings, appMode: next });
+    }).catch(() => {});
+  }, []);
 
   if (isPending) {
     return (
@@ -37,10 +59,22 @@ export default function App() {
   }
 
   if (!session) return <AuthPage />;
-  return <FlashcardApp user={session.user} />;
+
+  if (!appModeLoaded) {
+    return (
+      <div className="app">
+        <div className="center-message">Loading...</div>
+      </div>
+    );
+  }
+
+  if (appMode === "renshuu") {
+    return <RenshuuApp user={session.user} onSwitchApp={() => switchApp("classic")} />;
+  }
+  return <FlashcardApp user={session.user} onSwitchApp={() => switchApp("renshuu")} />;
 }
 
-function FlashcardApp({ user }: { user: { id: string; name: string; email: string } }) {
+function FlashcardApp({ user, onSwitchApp }: { user: { id: string; name: string; email: string }; onSwitchApp: () => void }) {
   const [phase, setPhase] = useState<Phase>("loading");
   const [cards, setCards] = useState<Card[]>([]);
   const [stats, setStats] = useState<StudyStats>({ history: {} });
@@ -116,7 +150,7 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
   // Persist settings on change
   useEffect(() => {
     if (phase === "loading") return;
-    saveUserData("settings", { cefrSel, dailyNew, reversed, darkMode, mnemonicLangs, designTheme, layoutVariant, productionMode });
+    saveUserData("settings", { cefrSel, dailyNew, reversed, darkMode, mnemonicLangs, designTheme, layoutVariant, productionMode, appMode: "classic" });
   }, [cefrSel, dailyNew, reversed, darkMode, mnemonicLangs, designTheme, layoutVariant, productionMode, phase]);
 
   // Flush pending deck save on unmount
@@ -456,6 +490,7 @@ function FlashcardApp({ user }: { user: { id: string; name: string; email: strin
         onRebuildSession={rebuildSession}
         onRebuildDeck={rebuildDeck}
         onSignOut={() => authClient.signOut()}
+        onSwitchApp={onSwitchApp}
         user={user}
       />
 

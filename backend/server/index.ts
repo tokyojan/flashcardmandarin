@@ -38,6 +38,62 @@ app.use(
   })
 );
 
+// --- Hanzi index (computed once, cached) ---
+interface HanziIndexEntry {
+  char: string;
+  pinyins: string[];
+  cefrFirst: string;
+  freqMin: number;
+  appearsIn: number;
+}
+let HANZI_INDEX: HanziIndexEntry[] | null = null;
+function buildHanziIndex(): HanziIndexEntry[] {
+  const map = new Map<string, { pinyins: Set<string>; cefr: string; freq: number; appears: number }>();
+  const cefrRank = (l: string) => ["A1", "A2", "B1", "B2", "C1", "C2"].indexOf(l) + 1 || 99;
+  for (const row of RAW_DECK) {
+    if (!row.useful_for_flashcard) continue;
+    const word = (row.word ?? "").trim();
+    const py = (row.romanization ?? "").trim();
+    const lvl = (row.cefr_level ?? "").trim().toUpperCase();
+    const freq = typeof row.word_frequency === "number" ? row.word_frequency : 1e9;
+    const sylls = py.split(/\s+/);
+    const chars = Array.from(word);
+    for (let i = 0; i < chars.length; i++) {
+      const ch = chars[i];
+      if (!/\p{Script=Han}/u.test(ch)) continue;
+      const existing = map.get(ch);
+      const sy = sylls[i] ?? "";
+      if (existing) {
+        if (sy) existing.pinyins.add(sy);
+        if (cefrRank(lvl) < cefrRank(existing.cefr)) existing.cefr = lvl;
+        if (freq < existing.freq) existing.freq = freq;
+        existing.appears++;
+      } else {
+        map.set(ch, { pinyins: new Set(sy ? [sy] : []), cefr: lvl, freq, appears: 1 });
+      }
+    }
+  }
+  return [...map.entries()]
+    .map(([char, v]) => ({ char, pinyins: [...v.pinyins], cefrFirst: v.cefr, freqMin: v.freq, appearsIn: v.appears }))
+    .sort((a, b) => a.freqMin - b.freqMin);
+}
+
+app.get("/api/hanzi-index", (c) => {
+  if (!HANZI_INDEX) HANZI_INDEX = buildHanziIndex();
+  c.header("Cache-Control", "public, max-age=3600");
+  return c.json(HANZI_INDEX);
+});
+
+app.get("/api/grammar", (c) => {
+  try {
+    const data = JSON.parse(readFileSync("./data/grammar.json", "utf-8"));
+    c.header("Cache-Control", "public, max-age=3600");
+    return c.json(data);
+  } catch {
+    return c.json([]);
+  }
+});
+
 // --- Raw deck (public, filtered by CEFR) ---
 app.get("/api/raw-deck", (c) => {
   const cefr = (c.req.query("cefr") ?? "ALL").toUpperCase();

@@ -1,0 +1,215 @@
+[
+  {
+    "id": "shi",
+    "pattern": "A 是 B",
+    "level": "A1",
+    "english": "A is B (equational sentence)",
+    "examples": [
+      { "native": "我是学生。", "english": "I am a student." },
+      { "native": "他是老师。", "english": "He is a teacher." }
+    ],
+    "keywords": ["是", "be", "equation"]
+  },
+  {
+    "id": "you",
+    "pattern": "Subject 有 Object",
+    "level": "A1",
+    "english": "Subject has Object",
+    "examples": [
+      { "native": "我有一本书。", "english": "I have a book." },
+      { "native": "她有两个孩子。", "english": "She has two children." }
+    ],
+    "keywords": ["有", "have", "possession"]
+  },
+  {
+    "id": "ma",
+    "pattern": "Sentence + 吗?",
+    "level": "A1",
+    "english": "Yes/no question particle",
+    "examples": [
+      { "native": "你是学生吗?", "english": "Are you a student?" },
+      { "native": "他来吗?", "english": "Is he coming?" }
+    ],
+    "keywords": ["吗", "question"]
+  },
+  {
+    "id": "bu",
+    "pattern": "不 + Verb",
+    "level": "A1",
+    "english": "Negation (non-past)",
+    "examples": [
+      { "native": "我不喜欢咖啡。", "english": "I don't like coffee." },
+      { "native": "他不来。", "english": "He's not coming." }
+    ],
+    "keywords": ["不", "negation"]
+  },
+  {
+    "id": "mei",
+    "pattern": "没 + Verb",
+    "level": "A1",
+    "english": "Negation of 有 / past actions",
+    "examples": [
+      { "native": "我没去。", "english": "I didn't go." },
+      { "native": "她没有钱。", "english": "She has no money." }
+    ],
+    "keywords": ["没", "没有", "negation", "past"]
+  },
+  {
+    "id": "le-completed",
+    "pattern": "Verb + 了",
+    "level": "A2",
+    "english": "Marks completed action",
+    "examples": [
+      { "native": "我吃了饭。", "english": "I ate." },
+      { "native": "他买了一辆车。", "english": "He bought a car." }
+    ],
+    "keywords": ["了", "completed", "aspect"]
+  },
+  {
+    "id": "guo",
+    "pattern": "Verb + 过",
+    "level": "A2",
+    "english": "Marks past experience",
+    "examples": [
+      { "native": "我去过北京。", "english": "I have been to Beijing." },
+      { "native": "你吃过饺子吗?", "english": "Have you ever eaten dumplings?" }
+    ],
+    "keywords": ["过", "experience"]
+  },
+  {
+    "id": "zai-progress",
+    "pattern": "在 + Verb",
+    "level": "A2",
+    "english": "Action in progress",
+    "examples": [
+      { "native": "我在看书。", "english": "I am reading." },
+      { "native": "他在睡觉。", "english": "He is sleeping." }
+    ],
+    "keywords": ["在", "progressive"]
+  },
+  {
+    "id": "ba",
+    "pattern": "把 + Object + Verb",
+    "level": "B1",
+    "english": "Disposal/affecting construction",
+    "examples": [
+      { "native": "请把门关上。", "english": "Please close the door." },
+      { "native": "他把信寄了。", "english": "He sent the letter." }
+    ],
+    "keywords": ["把", "disposal"]
+  },
+  {
+    "id": "bei",
+    "pattern": "被 + Agent + Verb",
+    "level": "B1",
+    "english": "Passive marker",
+    "examples": [
+      { "native": "杯子被打破了。", "english": "The cup was broken." },
+      { "native": "他被老师批评了。", "english": "He was criticized by the teacher." }
+    ],
+    "keywords": ["被", "passive"]
+  },
+  {
+    "id": "de-attributive",
+    "pattern": "Modifier + 的 + Noun",
+    "level": "A1",
+    "english": "Attributive marker",
+    "examples": [
+      { "native": "我的书", "english": "my book" },
+      { "native": "红色的车", "english": "red car" }
+    ],
+    "keywords": ["的", "attributive"]
+  },
+  {
+    "id": "de-adv",
+    "pattern": "Adverb + 地 + Verb",
+    "level": "B1",
+    "english": "Adverbial marker",
+    "examples": [
+      { "native": "他高兴地笑了。", "english": "He smiled happily." }
+    ],
+    "keywords": ["地", "adverb"]
+  },
+  {
+    "id": "de-result",
+    "pattern": "Verb + 得 + Complement",
+    "level": "B1",
+    "english": "Degree / manner complement",
+    "examples": [
+      { "native": "他跑得很快。", "english": "He runs very fast." },
+      { "native": "她唱得好。", "english": "She sings well." }
+    ],
+    "keywords": ["得", "complement"]
+  },
+  {
+    "id": "comparison-bi",
+    "pattern": "A 比 B + Adj",
+    "level": "A2",
+    "english": "Comparison",
+    "examples": [
+      { "native": "他比我高。", "english": "He is taller than me." }
+    ],
+    "keywords": ["比", "comparison"]
+  },
+  {
+    "id": "yiqi",
+    "pattern": "跟/和 + Person + 一起",
+    "level": "A2",
+    "english": "Together with someone",
+    "examples": [
+      { "native": "我跟朋友一起去。", "english": "I'll go together with a friend." }
+    ],
+    "keywords": ["一起", "together"]
+  },
+  {
+    "id": "neng-keyi",
+    "pattern": "能 / 可以 + Verb",
+    "level": "A1",
+    "english": "Can / be permitted to",
+    "examples": [
+      { "native": "我可以进来吗?", "english": "May I come in?" },
+      { "native": "他能说中文。", "english": "He can speak Chinese." }
+    ],
+    "keywords": ["能", "可以", "modal"]
+  },
+  {
+    "id": "yao",
+    "pattern": "要 + Verb",
+    "level": "A1",
+    "english": "Want to / will",
+    "examples": [
+      { "native": "我要喝水。", "english": "I want to drink water." }
+    ],
+    "keywords": ["要", "modal"]
+  },
+  {
+    "id": "yinwei-suoyi",
+    "pattern": "因为…所以…",
+    "level": "A2",
+    "english": "Because… therefore…",
+    "examples": [
+      { "native": "因为下雨,所以我不去。", "english": "Because it's raining, I'm not going." }
+    ],
+    "keywords": ["因为", "所以", "cause"]
+  },
+  {
+    "id": "suiran-danshi",
+    "pattern": "虽然…但是…",
+    "level": "B1",
+    "english": "Although… but…",
+    "examples": [
+      { "native": "虽然很累,但是很开心。", "english": "Although tired, very happy." }
+    ],
+    "keywords": ["虽然", "但是"]
+  },
+  {
+    "id": "ruguo",
+    "pattern": "如果…就…",
+    "level": "B1",
+    "english": "If… then…",
+    "examples": [
+      { "native": "如果下雨,我就不去。", "english": "If it rains, I won't go." }
+    ],
+    "keywords": ["如果", "就", "conditional"]
+  }
+]

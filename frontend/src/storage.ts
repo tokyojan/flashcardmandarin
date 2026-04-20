@@ -1,4 +1,4 @@
-import type { Settings, StudyStats, DayStats, Card, PersistedSession } from "./types";
+import type { Settings, StudyStats, DayStats, Card, PersistedSession, RenshuuSchedule, RenshuuSettings } from "./types";
 
 const DEFAULT_SETTINGS: Settings = {
   cefrSel: "A1",
@@ -9,6 +9,13 @@ const DEFAULT_SETTINGS: Settings = {
   designTheme: "classic",
   layoutVariant: "classic",
   productionMode: false,
+  appMode: "classic",
+};
+
+export const DEFAULT_RENSHUU_SETTINGS: RenshuuSettings = {
+  defaultQuestionTypes: ["meaningMC", "readingMC", "audioMC", "recallType"],
+  audioRate: 0.8,
+  accent: "teal",
 };
 
 // --- API helpers ---
@@ -34,6 +41,25 @@ export async function loadAllUserData(): Promise<UserData> {
       : { ...DEFAULT_SETTINGS },
     stats: data.stats ?? { history: {} },
     session: data.session ?? null,
+  };
+}
+
+export interface RenshuuUserData {
+  schedules: RenshuuSchedule[];
+  settings: RenshuuSettings;
+  dashboardLayout: string[] | null;
+}
+
+export async function loadRenshuuData(): Promise<RenshuuUserData> {
+  const resp = await api("/api/user-data");
+  if (!resp.ok) throw new Error("Failed to load renshuu data");
+  const data = await resp.json();
+  return {
+    schedules: Array.isArray(data.renshuuSchedules) ? data.renshuuSchedules : [],
+    settings: data.renshuuSettings
+      ? { ...DEFAULT_RENSHUU_SETTINGS, ...data.renshuuSettings }
+      : { ...DEFAULT_RENSHUU_SETTINGS },
+    dashboardLayout: Array.isArray(data.renshuuDashboardLayout) ? data.renshuuDashboardLayout : null,
   };
 }
 

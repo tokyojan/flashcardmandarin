@@ -20,6 +20,7 @@ interface Props {
   onRebuildSession: () => void;
   onRebuildDeck: () => void;
   onSignOut: () => void;
+  onSwitchApp: () => void;
   user: { name: string; email: string };
 }
 
@@ -68,6 +69,7 @@ export function Toolbar(p: Props) {
         <button className="btn-primary btn-sm" onClick={p.onRebuildDeck}>Rebuild Deck</button>
         <div className="toolbar-divider" />
         <span className="toolbar-user" title={p.user.email}>{p.user.name}</span>
+        <button className="btn-outline btn-sm" onClick={p.onSwitchApp} title="Switch to renshuu-style app">Renshuu mode</button>
         <button className="btn-outline btn-sm" onClick={p.onSignOut}>Sign Out</button>
       </div>
     </header>

@@ -37,6 +37,7 @@ export interface Card {
   mnemonicItalian?: string;
   sentenceNative?: string;
   sentenceEnglish?: string;
+  typeStats?: Partial<Record<RenshuuQuestionType, { correct: number; total: number }>>;
 }
 
 export type Grade = 0 | 3 | 4 | 5;
@@ -117,6 +118,54 @@ export interface Settings {
   designTheme: DesignTheme;
   layoutVariant: LayoutVariant;
   productionMode: boolean;
+  appMode: AppMode;
+}
+
+export type AppMode = "classic" | "renshuu";
+
+export type RenshuuQuestionType =
+  | "meaningMC"
+  | "readingMC"
+  | "audioMC"
+  | "recallType"
+  | "clozeSentence"
+  | "sentenceBuild"
+  | "toneDrill"
+  | "listeningSentence";
+
+export const RENSHUU_QUESTION_TYPES: { key: RenshuuQuestionType; label: string }[] = [
+  { key: "meaningMC", label: "Meaning (multi-choice)" },
+  { key: "readingMC", label: "Reading (multi-choice)" },
+  { key: "audioMC", label: "Audio \u2192 Hanzi" },
+  { key: "recallType", label: "Type the pinyin" },
+  { key: "clozeSentence", label: "Cloze sentence" },
+  { key: "sentenceBuild", label: "Build the sentence" },
+  { key: "toneDrill", label: "Tone drill" },
+  { key: "listeningSentence", label: "Listen \u2192 translation" },
+];
+
+export interface RenshuuListSource {
+  type: "cefr" | "custom";
+  value: string;
+}
+
+export interface RenshuuSchedule {
+  id: string;
+  name: string;
+  source: RenshuuListSource;
+  enabled: boolean;
+  newPerDay: number;
+  reviewsPerDay: number;
+  questionTypes: RenshuuQuestionType[];
+  cardIds?: number[];
+}
+
+export type RenshuuAccent = "teal" | "rose" | "indigo" | "amber";
+
+export interface RenshuuSettings {
+  defaultQuestionTypes: RenshuuQuestionType[];
+  audioRate: number;
+  accent: RenshuuAccent;
 }
 
 export interface SessionGrades {
