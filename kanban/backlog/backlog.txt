@@ -1,0 +1,3 @@
+- i've added a italian.json file. this file be adapted to be made similar to mandarin_with_pinyin_mnemonics.json. 
+- remove the english and italian button in the app, they don't do anything.
+- in the standard mode, add a toggle for the user to select which language the user wants. remember that choice the next time per user. leave mandarin by default.
